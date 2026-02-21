@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 # TOKEN ENV dan olinadi
-TOKEN = os.getenv("8530043545:AAHCIU_SIYsI4-J748vjo3dWTeUHaipXF1E")
+TOKEN = os.getenv("BOT_TOKEN")
 
 if not TOKEN:
     raise RuntimeError("8530043545:AAHCIU_SIYsI4-J748vjo3dWTeUHaipXF1E")
