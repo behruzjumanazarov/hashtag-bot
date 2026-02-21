@@ -6,7 +6,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 TOKEN = os.getenv("InstaHashBot")
 if not TOKEN:
     raise RuntimeError("8530043545:AAHCIU_SIYsI4-J748vjo3dWTeUHaipXF1E")
-
 BANK = {
     "motivatsiya": ["motivatsiya", "maqsad", "intizom", "harakat", "mehnat", "muvaffaqiyat", "hayot", "ozbekvideo"],
     "kulgili": ["kulgili", "prikol", "hazil", "kulgu", "qiziq", "ozbekprikol", "ozbekvideo"],
