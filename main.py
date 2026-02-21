@@ -3,9 +3,9 @@ import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
-TOKEN = os.getenv("8530043545:AAHCIU_SIYsI4-J748vjo3dWTeUHaipXF1E")
+TOKEN = os.getenv("InstaHashBot")
 if not TOKEN:
-    raise RuntimeError("BOT_TOKEN yo'q. Render env ga qo'y.")
+    raise RuntimeError("8530043545:AAHCIU_SIYsI4-J748vjo3dWTeUHaipXF1E")
 
 BANK = {
     "motivatsiya": ["motivatsiya", "maqsad", "intizom", "harakat", "mehnat", "muvaffaqiyat", "hayot", "ozbekvideo"],
