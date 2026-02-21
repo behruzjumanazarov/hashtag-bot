@@ -1,105 +1,62 @@
 import os
 import re
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-TOKEN = os.getenv("InstaHashBot")
+TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise RuntimeError("8530043545:AAHCIU_SIYsI4-J748vjo3dWTeUHaipXF1E")
-BANK = {
-    "motivatsiya": ["motivatsiya", "maqsad", "intizom", "harakat", "mehnat", "muvaffaqiyat", "hayot", "ozbekvideo"],
-    "kulgili": ["kulgili", "prikol", "hazil", "kulgu", "qiziq", "ozbekprikol", "ozbekvideo"],
-    "diniy": ["islom", "quran", "duo", "ramazon", "taqvo", "iman", "ozbekdiniy", "ozbekvideo"],
-    "sport": ["sport", "mashq", "trenirovka", "fitnes", "kuch", "soglomturmush", "ozbeksport", "ozbekvideo"],
-    "biznes": ["biznes", "tadbirkorlik", "pul", "daromad", "sotuv", "marketing", "ozbekbiznes", "ozbekvideo"],
-    "vlog": ["vlog", "kundalik", "hayot", "safar", "toshkent", "ozbekvlog", "ozbekvideo"],
-    "sevgi": ["sevgi", "muhabbat", "soginch", "hislar", "yurak", "romantika", "ozbekvideo"],
-}
 
-PLATFORM_TAGS = {
-    "ig": ["reels", "instagram", "ozbekreels"],
-    "tt": ["tiktok", "ozbektiktok", "ozbekvideo"],
-}
+def make_hashtags(text: str, limit: int = 20) -> str:
+    # faqat so'zlarni ajratib olamiz
+    text = re.sub(r"[^\w\s]", " ", text, flags=re.UNICODE)
+    words = text.split()
 
-KEYWORDS = {
-    "motivatsiya": ["motivatsiya", "ilhom", "maqsad", "intizom", "harakat", "muvaffaqiyat"],
-    "kulgili": ["kulgili", "hazil", "prikol", "kulgu", "qiziq"],
-    "diniy": ["islom", "quran", "duo", "ramazon", "namoz", "taqvo", "iman"],
-    "sport": ["sport", "mashq", "fitnes", "trenirovka", "kuch", "soglom"],
-    "biznes": ["biznes", "tadbirkor", "daromad", "pul", "sotuv", "marketing"],
-    "vlog": ["vlog", "kundalik", "hayot", "safar", "sayohat", "toshkent"],
-    "sevgi": ["sevgi", "muhabbat", "soginch", "his", "yurak", "romantika"],
-}
+    tags, seen = [], set()
+    for w in words:
+        w = w.strip()
+        if len(w) < 2 or len(w) > 30:
+            continue
+        key = w.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        w2 = re.sub(r"[^\w]", "", w, flags=re.UNICODE)
+        if not w2:
+            continue
+        tags.append("#" + w2)
+        if len(tags) >= limit:
+            break
 
-def normalize(text: str) -> str:
-    t = text.lower()
-    t = re.sub(r"[^a-z0-9ʻʼ’\s#-]", " ", t)
-    t = re.sub(r"\s+", " ", t).strip()
-    return t
-
-def pick_topics(text: str):
-    t = normalize(text)
-    topics = []
-    for topic, kws in KEYWORDS.items():
-        if any(kw in t for kw in kws):
-            topics.append(topic)
-    return topics[:2] if topics else ["vlog"]
-
-def build_hashtags(text: str, platform: str) -> str:
-    topics = pick_topics(text)
-    tags = []
-
-    for tp in topics:
-        tags.extend(BANK.get(tp, []))
-
-    tags.extend(PLATFORM_TAGS.get(platform, []))
-
-    words = [w for w in normalize(text).split() if len(w) >= 5 and not w.startswith("#")]
-    for w in words[:2]:
-        tags.append(w)
-
-    uniq, seen = [], set()
-    for x in tags:
-        x = x.replace(" ", "")
-        if x and x not in seen:
-            seen.add(x)
-            uniq.append(x)
-
-    uniq = uniq[:15]
-    return " ".join(f"#{t}" for t in uniq)
+    # har doim 3 ta umumiy o'zbek tag qo'shamiz
+    base = ["#ozbekvideo", "#reels", "#uzbek"]
+    out = base + tags
+    # uniq
+    uniq = []
+    s = set()
+    for t in out:
+        if t not in s:
+            s.add(t)
+            uniq.append(t)
+    return " ".join(uniq[:25])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = [[
-        InlineKeyboardButton("Instagram", callback_data="plat:ig"),
-        InlineKeyboardButton("TikTok", callback_data="plat:tt")
-    ]]
-    context.user_data["platform"] = "ig"
     await update.message.reply_text(
-        "Platformani tanla (default: Instagram). So‘ng video haqida 1-2 gap yoz.",
-        reply_markup=InlineKeyboardMarkup(kb)
-    )
-
-async def on_platform(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
-    platform = q.data.split(":")[1]
-    context.user_data["platform"] = platform
-    await q.edit_message_text(
-        f"Tanlandi: {'Instagram' if platform=='ig' else 'TikTok'} ✅\nEndi video haqida yoz."
+        "Salom! Matn yubor — men hashtag qilib beraman.\n"
+        "Misol: Motivatsion video, hayot, intizom"
     )
 
 async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "")[:500]
-    platform = context.user_data.get("platform", "ig")
-    hashtags = build_hashtags(text, platform)
-    await update.message.reply_text(hashtags)
+    text = (update.message.text or "").strip()
+    if not text:
+        return
+    await update.message.reply_text(make_hashtags(text) or "Hashtag chiqmadi.")
 
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(on_platform, pattern=r"^plat:(ig|tt)$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
